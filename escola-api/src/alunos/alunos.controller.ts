@@ -59,7 +59,7 @@ export class AlunosController {
     })
         @ApiQuery({
             name: 'page',
-            required: false,
+            required: false,   
             type: Number,
             description: 'Número da página (padrão: 1)'
     })
