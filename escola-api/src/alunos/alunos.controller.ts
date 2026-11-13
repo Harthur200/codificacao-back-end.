@@ -1,20 +1,8 @@
-import { Controller, 
-    Get,
-    Post,
-    Body,
-    Patch,
-    Param,
-    Delete,
-    Query,
-    DefaultValuePipe,
-    ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, DefaultValuePipe, ParseIntPipe } from "@nestjs/common";
     import { AlunosService } from "./alunos.service.js";
     import { CreateAlunoDto } from "./dto/create-aluno.dto.js";
     import { UpdateAlunoDto } from "./dto/update-aluno.dto.js";
-    import { ApiTags,
-         ApiResponse, 
-         ApiOperation,
-         ApiQuery } from "@nestjs/swagger"; 
+    import { ApiTags, ApiResponse, ApiOperation, ApiQuery } from "@nestjs/swagger"; 
 
 @ApiTags('alunos')
 @Controller('alunos')
@@ -37,24 +25,25 @@ export class AlunosController {
         return this.alunosService.create(createAlunoDto);
     }
 
-    @Get()
-    @ApiOperation({
-        summary: 'Listar todos os alunos',
-    })
-    @ApiResponse({
-        status:200,
-        description: 'Lista de alunos retornada com sucesso',
-    })
-    @ApiResponse({
-        status: 404,
-        description: 'Nenhum aluno encontrado',
-    })
+    // @Get()
+    // @ApiOperation({
+    //     summary: 'Listar todos os alunos',
+    // })
+    // @ApiResponse({
+    //     status:200,
+    //     description: 'Lista de alunos retornada com sucesso',
+    // })
+    // @ApiResponse({
+    //     status: 404,
+    //     description: 'Nenhum aluno encontrado',
+    // })
     // findAll(){
     //     return this.alunosService.findAll();
     // }
+
     @Get()
     @ApiOperation({
-        summary: 'Listar alunos com paginação',
+        summary: 'Listar alunos com paginação e filtros opcionais',
     })
     @ApiResponse({
         status: 200,
@@ -62,21 +51,17 @@ export class AlunosController {
     })
     @ApiResponse({
         status: 404,
-        description: 'Nenhum aluno encontrado',
+        description: 'Nenhum aluno encontrado'
     })
-   @ApiResponse({
+    @ApiResponse({
         status: 500,
-        description: 'Erro interno do servidor',
+        description: 'Erro interno do Servidor'
     })
     @ApiQuery({
         name: 'page',
         required: false,
-    })
-    @ApiQuery({
-        name: 'limit',
-        required: false,
-         type: Number,
-         description: 'Número de página (padrão: 1)',   
+        type: Number,
+        description: 'Número da página (padrão: 1)'
     })
     @ApiQuery({
         name: 'limit',
@@ -84,10 +69,26 @@ export class AlunosController {
         type: Number,
         description: 'Número de itens por página (padrão: 10)',
     })
-    findPage(@Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-             @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number){
-                return this.alunosService.findPage(page, limit);
-             }
+    @ApiQuery({
+        name:'nome',
+        required: false,
+        type: String,
+        description: 'Filtrar alunos pelo nome (Ex: Jamilly)'
+    })
+    @ApiQuery({
+        name:'curso',
+        required: false,
+        type: String,
+        description: 'Filtrar alunos pelo curso (Ex: Engenharia civil)'
+    })
+    findPage(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number, 
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('nome') nome?: string,
+        @Query('curso') curso?: string,
+        ){
+        return this.alunosService.findPage(page, limit, nome, curso);
+    }
 
     @Get(':id')
     @ApiOperation({
