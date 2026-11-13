@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, 
+         NotFoundException,
+         ConflictException,
+         InternalServerErrorException
+         } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateAlunoDto } from "./dto/create-aluno.dto.js";
 import { UpdateAlunoDto } from "./dto/update-aluno.dto.js";
 import { Aluno, AlunoDoc } from "./schemas/aluno.schema.js";
+import { MongoServerError } from "mongodb";
 
 
 @Injectable()
@@ -11,8 +16,20 @@ export class AlunosService {
     constructor(@InjectModel(Aluno.name) private alunoModel: Model<AlunoDoc>) {}
 
     async create(createAlunoDto: CreateAlunoDto): Promise<Aluno>{
-        const createAluno = new this.alunoModel(createAlunoDto);
-        return createAluno.save();
+        try{
+         const createAluno = new this.alunoModel(createAlunoDto);
+        return await createAluno.save();
+        } catch (error: unknown) {
+            if (
+                error instanceof MongoServerError 
+                && 
+                error.code === 11000
+            ){
+                throw new ConflictException('Já existe um aluno cadastrado com essa matricula');
+            }
+            throw new InternalServerErrorException('Erro ao Processar o  cadastro do aluno');
+        }
+       
     }
 
     // async findAll(): Promise <Aluno[]>{
@@ -20,9 +37,16 @@ export class AlunosService {
     // }
 
     //! Método para buscar os alunos com paginação
-    async findPage(page: number, limit: number, nome?: string, curso?: string){
+    async findPagefilter(
+        page: number, 
+        limit: number, 
+        nome?: string, 
+        curso?: string,
+        orderBy?: string,
+        orderDirection?: "asc" | "desc",){
         const skip = (page - 1) * limit;
         const filter: any = {};
+        const sort: any = {};
 
         if(nome){
             filter.nome = {
@@ -33,9 +57,13 @@ export class AlunosService {
         if(curso){
             filter.cursos = curso;
         }
+         
+         if(orderBy){
+            sort[orderBy] = orderDirection === 'desc' ? -1 : 1;            
+         }
 
         const [data, total] = await Promise.all([
-            this.alunoModel.find(filter).skip(skip).limit(limit).exec(),
+            this.alunoModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
             this.alunoModel.countDocuments(filter).exec(),
         ]);
         return {
